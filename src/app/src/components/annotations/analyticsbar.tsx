@@ -58,6 +58,6 @@ export default function AnalyticsBar(
   props: AnalyticsBarProps
 ): JSX.Element | null {
   if (props.dataPoints.length === 0)
-    return <div>Please Wait, Data is Loading!</div>;
+    return <div>Click on Analyze to start!</div>;
   return <Plot {...props} />;
 }
