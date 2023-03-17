@@ -49,6 +49,7 @@ import FileModal from "./filemodal";
 import AnnotatorSettings from "./utils/annotatorsettings";
 import FormatTimerSeconds from "./utils/timer";
 import { RegisteredModel } from "./model";
+import AnalyticsBar, { AnalyticsBarDataPoint } from "./analyticsbar";
 
 type Point = [number, number];
 type MapType = L.DrawMap;
@@ -148,6 +149,8 @@ interface AnnotatorState {
     opacity: number;
   };
   currAnnotationPlaybackId: number;
+  isAnalyticMode: boolean;
+  analyticBarData: AnalyticsBarDataPoint[];
 }
 
 /**
@@ -246,6 +249,8 @@ export default class Annotator extends Component<
         },
       },
       currAnnotationPlaybackId: 0,
+      isAnalyticMode: false,
+      analyticBarData: [],
     };
 
     this.toaster = new Toaster({}, {});
@@ -787,6 +792,36 @@ export default class Annotator extends Component<
       )
         .then(response => {
           if (this.currentAsset.url === asset.url && singleAnalysis) {
+            // Gather data for analytics
+            const graphData: AnalyticsBarDataPoint[] = Object.entries(
+              response.data.frames
+            ).map(([ms, _annotation]) => {
+              const annotation = _annotation as {
+                confidence: number;
+                tag: { id: number; name: string };
+              }[];
+              const allTagNames = Array.from(
+                new Set<string>(annotation.map(a => a.tag.name))
+              );
+              return {
+                ms: parseInt(ms, 10),
+                data: Object.fromEntries(
+                  allTagNames.map(
+                    tag =>
+                      [
+                        tag,
+                        annotation.filter(
+                          a =>
+                            a.tag.name === tag &&
+                            a.confidence >= this.state.confidence
+                        ).length,
+                      ] as const
+                  )
+                ),
+              };
+            });
+            this.setState({ analyticBarData: graphData });
+
             const videoElement = this.videoOverlay.getElement();
             /**
              * Recursive Callback function that
@@ -1315,6 +1350,7 @@ export default class Annotator extends Component<
       this.backgroundImg = document.querySelector(
         ".leaflet-pane.leaflet-overlay-pane video.leaflet-image-layer"
       );
+      this.setState({ isAnalyticMode: true });
     }
   }
 
@@ -1574,15 +1610,19 @@ export default class Annotator extends Component<
               className={[isCollapsed, "image-bar"].join("")}
               id={"image-bar"}
             >
-              <ImageBar
-                ref={ref => {
-                  this.imagebarRef = ref;
-                }}
-                /* Only visible assets should be shown */
-                assetList={visibleAssets}
-                callbacks={{ selectAssetCallback: this.selectAsset }}
-                {...this.props}
-              />
+              {this.state.isAnalyticMode ? (
+                <AnalyticsBar dataPoints={this.state.analyticBarData} />
+              ) : (
+                <ImageBar
+                  ref={ref => {
+                    this.imagebarRef = ref;
+                  }}
+                  /* Only visible assets should be shown */
+                  assetList={visibleAssets}
+                  callbacks={{ selectAssetCallback: this.selectAsset }}
+                  {...this.props}
+                />
+              )}
             </Card>
           </div>
 

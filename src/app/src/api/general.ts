@@ -43,7 +43,7 @@ export function APIAutosaveQuery(): Promise<AxiosResponse<any>> {
 
 export function APIAutosaveToggle(flag: boolean): Promise<AxiosResponse<any>> {
   return axios.post(
-    SERVER_ADDRESS + AUTOSAVE_TOGGLE + "/" + (flag ? "on" : "off")
+    `${SERVER_ADDRESS + AUTOSAVE_TOGGLE}/${flag ? "on" : "off"}`
   );
 }
 

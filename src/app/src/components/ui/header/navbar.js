@@ -181,7 +181,7 @@ export default class HeaderNav extends React.Component {
                   "https://joindatature.slack.com/join/shared_invite/zt-hv9xv84h-WYDFnU1clNM0eGW4SfQGGg#/";
               }}
             >
-              Community Slack
+              Community Slack nom
             </Button>
             <span className="bp3-navbar-divider" />
             <Popover
